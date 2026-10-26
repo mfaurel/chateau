@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plan 3D — Château de Pau</title>
+<style>
+  :root { --fond:#f2f5fa; --panneau:#ffffff; --texte:#1d2433; --doux:#6b7385; --bord:#d9dee8; --accent:#2f6fde; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; height:100%; font:14px/1.4 system-ui, "Segoe UI", sans-serif; color:var(--texte); background:var(--fond); overflow:hidden; }
+  #app { display:flex; height:100%; }
+  #vue { position:relative; flex:1; min-width:0; }
+  #vue canvas { display:block; }
+  #panneau { width:340px; background:var(--panneau); border-left:1px solid var(--bord); display:flex; flex-direction:column; }
+  #panneau section { padding:10px 12px; border-bottom:1px solid var(--bord); }
+  #panneau h2 { font-size:13px; text-transform:uppercase; letter-spacing:.04em; color:var(--doux); margin:0 0 6px; display:flex; justify-content:space-between; align-items:center; }
+  #mots, #groupes { overflow:auto; }
+  #sec-mots { flex:1; min-height:0; display:flex; flex-direction:column; }
+  #sec-groupes { max-height:38%; display:flex; flex-direction:column; }
+  ul { list-style:none; margin:0; padding:0; }
+  li.mot { display:flex; align-items:center; gap:6px; padding:3px 4px; border-radius:4px; cursor:pointer; }
+  li.mot:hover { background:#eef2f9; }
+  li.mot.sel { background:#dfe9fc; }
+  li.mot .ordre { min-width:18px; font-weight:600; color:var(--accent); text-align:center; }
+  li.mot .nom { font-weight:600; }
+  li.mot .lieu { color:var(--doux); font-size:12px; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  li.mot .pastilles { display:flex; gap:2px; }
+  .pastille { width:9px; height:9px; border-radius:50%; display:inline-block; }
+  li.groupe { padding:5px 4px; border-radius:4px; display:flex; gap:6px; align-items:flex-start; }
+  li.groupe:hover { background:#f4f6fa; }
+  li.groupe .contenu { flex:1; min-width:0; }
+  li.groupe .titre { font-weight:600; cursor:text; }
+  li.groupe .liste { color:var(--doux); font-size:12px; }
+  button, .bouton { font:inherit; font-size:12px; padding:4px 8px; border:1px solid var(--bord); background:#fff; border-radius:4px; cursor:pointer; color:var(--texte); }
+  button:hover { border-color:var(--accent); }
+  button.primaire { background:var(--accent); color:#fff; border-color:var(--accent); }
+  button.primaire:disabled { opacity:.45; cursor:not-allowed; }
+  button.mini { padding:0 5px; border:none; background:none; color:var(--doux); font-size:14px; }
+  button.mini:hover { color:#c0392b; }
+  .ligne { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+  .etages button.off { opacity:.45; text-decoration:line-through; }
+  .aide { color:var(--doux); font-size:12px; }
+  #chargement { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:8px; background:var(--fond); z-index:5; }
+  #barre { width:260px; height:6px; background:var(--bord); border-radius:3px; overflow:hidden; }
+  #barre div { height:100%; width:0; background:var(--accent); transition:width .2s; }
+  /* étiquettes 3D */
+  .etiquette { font:600 12px system-ui, sans-serif; padding:2px 7px; border-radius:10px; background:#fff; border:2px solid #333; white-space:nowrap; cursor:pointer; user-select:none; pointer-events:auto; box-shadow:0 1px 3px rgba(0,0,0,.3); transform:translateY(-14px); }
+  .etiquette.sel { background:#ffe46b; }
+  .etiquette.cache { display:none; }
+  .lieu3d { font:11px system-ui, sans-serif; color:#fff; background:rgba(20,30,50,.65); padding:1px 5px; border-radius:3px; white-space:nowrap; pointer-events:auto; cursor:pointer; }
+  .lieu3d.cache { display:none; }
+  #saisie { position:absolute; z-index:6; background:#fff; border:1px solid var(--bord); border-radius:6px; padding:8px; box-shadow:0 4px 14px rgba(0,0,0,.2); display:none; width:240px; }
+  #saisie input { width:100%; font:inherit; padding:5px 6px; border:1px solid var(--bord); border-radius:4px; }
+  #saisie .aide { margin:4px 0 6px; }
+  #info { position:absolute; left:10px; bottom:10px; z-index:4; background:rgba(255,255,255,.85); padding:4px 8px; border-radius:4px; font-size:12px; color:var(--doux); }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+  "three-mesh-bvh": "https://cdn.jsdelivr.net/npm/three-mesh-bvh@0.7.3/build/index.module.js"
+} }
+</script>
+<script src="lieux.js"></script>
+</head>
+<body>
+<div id="app">
+  <div id="vue">
+    <div id="chargement"><div id="msg">Chargement du modèle…</div><div id="barre"><div></div></div></div>
+    <div id="saisie">
+      <input id="saisie-mot" list="vocabulaire" placeholder="Mot (ex. Vase)" autocomplete="off">
+      <datalist id="vocabulaire"></datalist>
+      <div class="aide" id="saisie-lieu"></div>
+      <div class="ligne"><button class="primaire" id="saisie-ok">Ajouter</button><button id="saisie-annuler">Annuler</button></div>
+    </div>
+    <div id="info">Clic sur le château : ajouter un mot · glisser : tourner · clic droit : déplacer · molette : zoom</div>
+  </div>
+  <aside id="panneau">
+    <section>
+      <h2>Étages</h2>
+      <div class="ligne etages" id="etages"></div>
+      <div class="ligne" style="margin-top:6px">
+        <label><input type="checkbox" id="voir-lieux"> Noms des salles</label>
+        <label><input type="checkbox" id="eclairage"> Éclairage</label>
+        <button id="recentrer">Recentrer</button>
+      </div>
+    </section>
+    <section id="sec-mots">
+      <h2><span>Mots <span id="nb-mots"></span></span><button id="deselect">Désélectionner</button></h2>
+      <div class="aide">Cliquer les mots (liste ou 3D) dans l'ordre voulu, puis relier.</div>
+      <ul id="mots"></ul>
+      <div class="ligne" style="margin-top:8px">
+        <button class="primaire" id="relier" disabled>Relier la sélection</button>
+        <span class="aide" id="nb-sel"></span>
+      </div>
+    </section>
+    <section id="sec-groupes">
+      <h2>Liaisons <span id="nb-groupes"></span></h2>
+      <ul id="groupes"></ul>
+    </section>
+    <section class="ligne">
+      <button id="exporter">Exporter</button>
+      <label class="bouton">Importer<input type="file" id="importer" accept=".json" hidden></label>
+      <button id="tout-effacer">Tout effacer</button>
+    </section>
+  </aside>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+import { computeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
+
+THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
+THREE.Mesh.prototype.raycast = acceleratedRaycast;
+
+// ?hd=1 charge scene.glb (169 Mo) au lieu de scene_mobile.glb (95 Mo), s'il a été téléchargé
+const HD = new URLSearchParams(location.search).has('hd');
+const MODELE = `modele/model_D6FE4088_8607_5355_41DD_4B2B4BE6FD03/${HD ? 'scene.glb' : 'scene_mobile.glb'}`;
+const ETAGES = [['Combles', '336ab54792da46d69b0064db13c440d8'], ['2dEtage', '2dEtage'], ['1erEtage', '1erEtage'], ['RDC', 'RDC']];
+const NOM_ETAGE = { Combles: 'Combles', '2dEtage': '2e étage', '1erEtage': '1er étage', RDC: 'RDC' };
+const COULEURS = ['#e6194b', '#3cb44b', '#4363d8', '#f58231', '#911eb4', '#42d4f4', '#f032e6', '#9a6324', '#800000', '#469990', '#000075', '#bfef45'];
+const CLE = 'chateaudepau-plan3d-v1';
+const MIN_LIAISON = 2;       // nombre minimal de mots pour créer une liaison
+
+// --- état ---
+let etat = { mots: [], groupes: [] };
+let selection = [];          // ids de mots, dans l'ordre de clic
+try { const s = JSON.parse(localStorage.getItem(CLE)); if (s && s.mots) etat = s; } catch (e) {}
+const sauver = () => { try { localStorage.setItem(CLE, JSON.stringify(etat)); } catch (e) {} };
+const uid = () => Math.random().toString(36).slice(2, 9);
+
+// --- scène ---
+const vue = document.getElementById('vue');
+const scene = new THREE.Scene();
+scene.background = new THREE.Color('#f2f5fa');
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 2000);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+vue.appendChild(renderer.domElement);
+const etiquettes = new CSS2DRenderer();
+Object.assign(etiquettes.domElement.style, { position: 'absolute', top: '0', left: '0', pointerEvents: 'none' });
+vue.appendChild(etiquettes.domElement);
+const controles = new OrbitControls(camera, renderer.domElement);
+controles.enableDamping = true;
+controles.screenSpacePanning = true;
+
+const hemi = new THREE.HemisphereLight(0xffffff, 0x8899aa, 2.2);
+const soleil = new THREE.DirectionalLight(0xffffff, 1.5);
+soleil.position.set(30, 60, 40);
+scene.add(hemi, soleil);
+
+function redimensionner() {
+  const w = vue.clientWidth, h = vue.clientHeight;
+  renderer.setSize(w, h); etiquettes.setSize(w, h);
+  camera.aspect = w / h; camera.updateProjectionMatrix();
+}
+addEventListener('resize', redimensionner);
+redimensionner();
+
+const calqueMots = new THREE.Group(), calqueLiens = new THREE.Group(), calqueLieux = new THREE.Group();
+scene.add(calqueMots, calqueLiens, calqueLieux);
+
+// --- chargement du modèle ---
+const ktx2 = new KTX2Loader().setTranscoderPath('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/basis/').detectSupport(renderer);
+const chargeur = new GLTFLoader().setKTX2Loader(ktx2).setMeshoptDecoder(MeshoptDecoder);
+const noeuds = {};            // clé d'étage -> Object3D
+const maillages = [];
+let materiauxOrig = new Map(), materiauxPlats = new Map();
+let boite = new THREE.Box3();
+
+chargeur.load(MODELE, gltf => {
+  const racine = gltf.scene;
+  scene.add(racine);
+  for (const [cle, nom] of ETAGES) noeuds[cle] = racine.getObjectByName(nom);
+  racine.traverse(o => {
+    if (!o.isMesh) return;
+    o.geometry.computeBoundsTree();
+    maillages.push(o);
+    materiauxOrig.set(o, o.material);
+    const m = o.material;
+    materiauxPlats.set(o, new THREE.MeshBasicMaterial({ map: m.map || null, color: m.map ? 0xffffff : m.color, side: m.side, transparent: m.transparent, alphaTest: m.alphaTest }));
+  });
+  appliquerEclairage();
+  // emprise des salles plutôt que du modèle, qui contient quelques débris éloignés
+  if (window.LIEUX?.length) boite.setFromPoints(window.LIEUX.map(l => new THREE.Vector3(...l.pos))).expandByScalar(4);
+  else boite.setFromObject(racine);
+  recentrer();
+  document.getElementById('chargement').remove();
+  construireLieux();
+  toutRedessiner();
+}, ev => {
+  if (ev.total) document.querySelector('#barre div').style.width = (100 * ev.loaded / ev.total) + '%';
+  document.getElementById('msg').textContent = `Chargement du modèle… ${(ev.loaded / 1e6).toFixed(0)} Mo`;
+}, err => {
+  document.getElementById('msg').textContent = 'Échec du chargement : ' + (err.message || err) +
+    (location.protocol === 'file:' ? ' — ouvrir la page via un serveur local (voir lancer.ps1).' : '');
+});
+
+function recentrer() {
+  const c = boite.getCenter(new THREE.Vector3()), t = boite.getSize(new THREE.Vector3());
+  controles.target.copy(c);
+  camera.position.set(c.x - t.x * 0.2, c.y + t.x * 0.9, c.z + t.x * 0.55);
+  controles.update();
+}
+
+const chkEclairage = document.getElementById('eclairage');
+function appliquerEclairage() {
+  for (const o of maillages) o.material = chkEclairage.checked ? materiauxOrig.get(o) : materiauxPlats.get(o);
+}
+chkEclairage.onchange = appliquerEclairage;
+document.getElementById('recentrer').onclick = recentrer;
+
+// --- étages ---
+const zoneEtages = document.getElementById('etages');
+for (const [cle] of ETAGES) {
+  const b = document.createElement('button');
+  b.textContent = NOM_ETAGE[cle];
+  b.title = 'Clic : afficher/masquer · double-clic : ne garder que cet étage et ceux du dessous';
+  b.onclick = () => { if (noeuds[cle]) { noeuds[cle].visible = !noeuds[cle].visible; majEtages(); } };
+  b.ondblclick = () => {
+    const i = ETAGES.findIndex(e => e[0] === cle);
+    ETAGES.forEach(([k], j) => { if (noeuds[k]) noeuds[k].visible = j >= i; });
+    majEtages();
+  };
+  b.dataset.cle = cle;
+  zoneEtages.appendChild(b);
+}
+const etageVisible = cle => !noeuds[cle] || noeuds[cle].visible;
+function majEtages() {
+  for (const b of zoneEtages.children) b.classList.toggle('off', !etageVisible(b.dataset.cle));
+  majVisibilites();
+}
+
+// --- salles (points de vue de la visite) ---
+const chkLieux = document.getElementById('voir-lieux');
+function construireLieux() {
+  for (const l of window.LIEUX || []) {
+    const d = document.createElement('div');
+    d.className = 'lieu3d';
+    d.textContent = l.nom;
+    d.title = `${l.nom} — ${NOM_ETAGE[l.etage] || l.etage} (${l.id})`;
+    d.onclick = () => volerVers(new THREE.Vector3(...l.pos));
+    const o = new CSS2DObject(d);
+    o.position.set(...l.pos);
+    o.userData.lieu = l;
+    calqueLieux.add(o);
+  }
+  majVisibilites();
+}
+chkLieux.onchange = majVisibilites;
+function lieuLePlusProche(p, etage) {
+  let best = null, dmin = Infinity;
+  for (const l of window.LIEUX || []) {
+    if (etage && l.etage !== etage) continue;
+    const d = p.distanceTo(new THREE.Vector3(...l.pos));
+    if (d < dmin) { dmin = d; best = l; }
+  }
+  return best;
+}
+function volerVers(p) {
+  const decalage = camera.position.clone().sub(controles.target).setLength(18);
+  controles.target.copy(p);
+  camera.position.copy(p).add(decalage);
+  controles.update();
+}
+
+function etageDe(objet) {
+  for (let o = objet; o; o = o.parent)
+    for (const [cle, nom] of ETAGES) if (o.name === nom) return cle;
+  return null;
+}
+
+// --- clic sur le modèle : ajout d'un mot ---
+const rayon = new THREE.Raycaster();
+let appui = null, pointEnAttente = null;
+renderer.domElement.addEventListener('pointerdown', e => { appui = { x: e.clientX, y: e.clientY, b: e.button }; });
+renderer.domElement.addEventListener('pointerup', e => {
+  if (!appui || appui.b !== 0 || Math.hypot(e.clientX - appui.x, e.clientY - appui.y) > 5) return;
+  const r = renderer.domElement.getBoundingClientRect();
+  rayon.setFromCamera(new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1), camera);
+  const touche = rayon.intersectObjects(maillages.filter(m => m.visible && etageVisible(etageDe(m))), false)[0];
+  if (!touche) return;
+  const etage = etageDe(touche.object);
+  const lieu = lieuLePlusProche(touche.point, etage);
+  pointEnAttente = { pos: touche.point.toArray().map(v => +v.toFixed(3)), etage, lieu: lieu ? lieu.nom : '' };
+  ouvrirSaisie(e.clientX - r.left, e.clientY - r.top);
+});
+
+const saisie = document.getElementById('saisie'), champ = document.getElementById('saisie-mot');
+function ouvrirSaisie(x, y) {
+  document.getElementById('vocabulaire').innerHTML = [...new Set(etat.mots.map(m => m.mot))].map(m => `<option value="${echap(m)}">`).join('');
+  document.getElementById('saisie-lieu').textContent = `${pointEnAttente.lieu || 'Lieu inconnu'} · ${NOM_ETAGE[pointEnAttente.etage] || ''}`;
+  saisie.style.left = Math.min(x, vue.clientWidth - 250) + 'px';
+  saisie.style.top = Math.min(y, vue.clientHeight - 110) + 'px';
+  saisie.style.display = 'block';
+  champ.value = '';
+  champ.focus();
+}
+const fermerSaisie = () => { saisie.style.display = 'none'; pointEnAttente = null; };
+function validerSaisie() {
+  const mot = champ.value.trim();
+  if (!mot || !pointEnAttente) return fermerSaisie();
+  etat.mots.push({ id: uid(), mot, ...pointEnAttente });
+  fermerSaisie(); sauver(); toutRedessiner();
+}
+document.getElementById('saisie-ok').onclick = validerSaisie;
+document.getElementById('saisie-annuler').onclick = fermerSaisie;
+champ.addEventListener('keydown', e => { if (e.key === 'Enter') validerSaisie(); if (e.key === 'Escape') fermerSaisie(); });
+
+// --- sélection et liaisons ---
+function basculer(id) {
+  const i = selection.indexOf(id);
+  if (i >= 0) selection.splice(i, 1); else selection.push(id);
+  toutRedessiner();
+}
+document.getElementById('deselect').onclick = () => { selection = []; toutRedessiner(); };
+document.getElementById('relier').onclick = () => {
+  if (selection.length < MIN_LIAISON) return;
+  const n = etat.groupes.length;
+  etat.groupes.push({ id: uid(), nom: `Liaison ${n + 1}`, couleur: COULEURS[n % COULEURS.length], mots: [...selection], visible: true });
+  selection = []; sauver(); toutRedessiner();
+};
+
+const motParId = id => etat.mots.find(m => m.id === id);
+function supprimerMot(id) {
+  etat.mots = etat.mots.filter(m => m.id !== id);
+  selection = selection.filter(s => s !== id);
+  for (const g of etat.groupes) g.mots = g.mots.filter(m => m !== id);
+  sauver(); toutRedessiner();
+}
+
+// --- rendu des mots (3D + liste) et des liaisons ---
+const couleurSure = c => /^#[0-9a-fA-F]{6}$/.test(c) ? c : '#333333';
+const echap = s =>String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const geoPoint = new THREE.SphereGeometry(0.25, 12, 8);
+
+function toutRedessiner() {
+  for (const o of [...calqueMots.children]) { o.element?.remove(); calqueMots.remove(o); }
+  for (const o of [...calqueLiens.children]) { o.geometry.dispose(); calqueLiens.remove(o); }
+  const couleursDe = id => etat.groupes.filter(g => g.mots.includes(id)).map(g => g.couleur);
+
+  for (const m of etat.mots) {
+    const coul = couleursDe(m.id);
+    const d = document.createElement('div');
+    d.className = 'etiquette' + (selection.includes(m.id) ? ' sel' : '');
+    d.textContent = m.mot;
+    d.style.borderColor = coul[0] || '#333';
+    d.title = `${m.mot} — ${m.lieu} (${NOM_ETAGE[m.etage] || ''})`;
+    d.onpointerdown = e => e.stopPropagation();
+    d.onclick = e => { e.stopPropagation(); basculer(m.id); };
+    const etq = new CSS2DObject(d);
+    etq.position.set(...m.pos);
+    etq.userData.etage = m.etage;
+    const point = new THREE.Mesh(geoPoint, new THREE.MeshBasicMaterial({ color: coul[0] || '#222', depthTest: false }));
+    point.renderOrder = 10;
+    point.position.set(...m.pos);
+    point.userData.etage = m.etage;
+    calqueMots.add(etq, point);
+  }
+
+  for (const g of etat.groupes) {
+    const pts = g.mots.map(motParId).filter(Boolean).map(m => new THREE.Vector3(...m.pos));
+    if (pts.length < 2) continue;
+    const ligne = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),
+      new THREE.LineBasicMaterial({ color: g.couleur, depthTest: false, transparent: true, opacity: .9 }));
+    ligne.renderOrder = 9;
+    ligne.visible = g.visible !== false;
+    calqueLiens.add(ligne);
+  }
+
+  // liste des mots
+  const ul = document.getElementById('mots');
+  ul.innerHTML = '';
+  for (const m of etat.mots) {
+    const li = document.createElement('li');
+    const rang = selection.indexOf(m.id);
+    li.className = 'mot' + (rang >= 0 ? ' sel' : '');
+    li.innerHTML = `<span class="ordre">${rang >= 0 ? rang + 1 : ''}</span><span class="nom">${echap(m.mot)}</span>
+      <span class="lieu">${echap(m.lieu)} · ${NOM_ETAGE[m.etage] || ''}</span>
+      <span class="pastilles">${couleursDe(m.id).map(c => `<span class="pastille" style="background:${couleurSure(c)}"></span>`).join('')}</span>
+      <button class="mini" title="Centrer la vue">◎</button><button class="mini" title="Supprimer">×</button>`;
+    li.onclick = () => basculer(m.id);
+    const [btnCentrer, btnSuppr] = li.querySelectorAll('button');
+    btnCentrer.onclick = e => { e.stopPropagation(); volerVers(new THREE.Vector3(...m.pos)); };
+    btnSuppr.onclick = e => { e.stopPropagation(); supprimerMot(m.id); };
+    ul.appendChild(li);
+  }
+  document.getElementById('nb-mots').textContent = `(${etat.mots.length})`;
+  document.getElementById('nb-sel').textContent = selection.length ? `${selection.length} sélectionné(s)${selection.length < MIN_LIAISON ? ` — ${MIN_LIAISON} minimum` : ''}` : '';
+  document.getElementById('relier').disabled = selection.length < MIN_LIAISON;
+
+  // liste des liaisons
+  const ug = document.getElementById('groupes');
+  ug.innerHTML = '';
+  for (const g of etat.groupes) {
+    const li = document.createElement('li');
+    li.className = 'groupe';
+    li.innerHTML = `<input type="color" value="${couleurSure(g.couleur)}" title="Couleur">
+      <div class="contenu"><div class="titre" title="Double-clic pour renommer">${echap(g.nom)}</div>
+      <div class="liste">${g.mots.map(motParId).filter(Boolean).map(m => echap(m.mot)).join(' → ')}</div></div>
+      <button class="mini" title="Afficher / masquer">${g.visible === false ? '◌' : '●'}</button>
+      <button class="mini" title="Resélectionner pour modifier">✎</button>
+      <button class="mini" title="Supprimer la liaison">×</button>`;
+    const [btnVoir, btnEditer, btnSuppr] = li.querySelectorAll('button');
+    li.querySelector('input').onchange = e => { g.couleur = e.target.value; sauver(); toutRedessiner(); };
+    li.querySelector('.titre').ondblclick = () => { const n = prompt('Nom de la liaison', g.nom); if (n) { g.nom = n; sauver(); toutRedessiner(); } };
+    btnVoir.onclick = () => { g.visible = g.visible === false; sauver(); toutRedessiner(); };
+    btnEditer.onclick = () => { selection = [...g.mots]; etat.groupes = etat.groupes.filter(x => x !== g); sauver(); toutRedessiner(); };
+    btnSuppr.onclick = () => { etat.groupes = etat.groupes.filter(x => x !== g); sauver(); toutRedessiner(); };
+    ug.appendChild(li);
+  }
+  document.getElementById('nb-groupes').textContent = `(${etat.groupes.length})`;
+  majVisibilites();
+}
+
+// un mot ou une salle d'un étage masqué est masqué aussi
+function majVisibilites() {
+  for (const o of calqueMots.children) {
+    const v = etageVisible(o.userData.etage);
+    o.visible = v;
+    o.element?.classList.toggle('cache', !v);
+  }
+  for (const o of calqueLieux.children) {
+    const v = chkLieux.checked && etageVisible(o.userData.lieu.etage);
+    o.visible = v;
+    o.element.classList.toggle('cache', !v);
+  }
+}
+
+// --- export / import ---
+document.getElementById('exporter').onclick = () => {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(etat, null, 1)], { type: 'application/json' }));
+  a.download = 'chateaudepau-mots.json';
+  a.click();
+};
+document.getElementById('importer').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    const s = JSON.parse(await f.text());
+    if (!Array.isArray(s.mots)) throw new Error('format');
+    etat = { mots: s.mots, groupes: s.groupes || [] }; selection = []; sauver(); toutRedessiner();
+  } catch (err) { alert('Fichier invalide'); }
+  e.target.value = '';
+};
+document.getElementById('tout-effacer').onclick = () => {
+  if (confirm('Effacer tous les mots et toutes les liaisons ?')) { etat = { mots: [], groupes: [] }; selection = []; sauver(); toutRedessiner(); }
+};
+
+renderer.setAnimationLoop(() => { controles.update(); renderer.render(scene, camera); etiquettes.render(scene, camera); });
+toutRedessiner();
+</script>
+</body>
+</html>
