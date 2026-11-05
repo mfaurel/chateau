@@ -3,221 +3,719 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Rotation des jeux de mots</title>
+<title>Tangram de la carte</title>
 <style>
-:root{--bg:#f4ede0;--panel:#fffaf1;--ink:#2b2118;--muted:#7a6a58;--line:#d9ccb6;--acc:#b3261e;--acc2:#1f5fa8;--ok:#1b7a3a}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d1915;--panel:#27221c;--ink:#efe6d6;--muted:#a99a85;--line:#41382e;--acc:#ff6b5e;--acc2:#6aa8ff;--ok:#5fd38a}}
+:root{--bg:#f4ede0;--panel:#fffaf1;--ink:#2b2118;--muted:#7a6a58;--line:#d9ccb6;--acc:#b3261e;--acc2:#1f5fa8;--table:#2a2622;--btn:#efe5d3}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d1915;--panel:#27221c;--ink:#efe6d6;--muted:#a99a85;--line:#41382e;--acc:#ff6b5e;--acc2:#6aa8ff;--table:#141210;--btn:#352e26}}
+:root[data-theme="dark"]{--bg:#1d1915;--panel:#27221c;--ink:#efe6d6;--muted:#a99a85;--line:#41382e;--acc:#ff6b5e;--acc2:#6aa8ff;--table:#141210;--btn:#352e26}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;height:100vh;display:flex;overflow:hidden}
-#carte{flex:1;position:relative;min-width:0}
-svg{width:100%;height:100%;display:block;cursor:grab;background:#000}
-svg.drag{cursor:grabbing} svg.placer{cursor:crosshair}
-#hud{position:absolute;top:12px;left:12px;background:rgba(20,15,10,.82);color:#fff;padding:10px 14px;border-radius:10px;pointer-events:none}
-#hud .a{font:700 34px/1 ui-monospace,Consolas,monospace}
-#hud .s{font-size:12px;opacity:.8;margin-top:4px}
-aside{width:380px;background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden}
-.bloc{padding:12px 14px;border-bottom:1px solid var(--line)}
-h2{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 8px}
-input[type=range]{width:100%}
-.row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px}
-button{font:inherit;font-size:12px;padding:4px 8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:6px;cursor:pointer}
-button:hover{border-color:var(--acc2)} button.on{background:var(--acc2);color:#fff;border-color:var(--acc2)}
-input[type=number]{width:110px;font:600 14px ui-monospace,Consolas,monospace;padding:3px 6px;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:6px}
-label{user-select:none}
-#liste{overflow:auto;flex:1;padding:6px 14px}
-.it{display:flex;align-items:center;gap:6px;padding:2px 0;font-size:13px}
-.it .c{font:11px ui-monospace,Consolas,monospace;color:var(--muted);width:30px}
-.it .s{font-size:10px;color:var(--muted)}
-.it.sel{background:rgba(31,95,168,.15);border-radius:4px}
-.it span.n{flex:1;cursor:pointer}
-#hits{max-height:170px;overflow:auto;font-size:12px}
-#hits div,#scan div{padding:1px 0}
-#scan{max-height:200px;overflow:auto;font-size:12px}
-#scan div{cursor:pointer} #scan div:hover{color:var(--acc2)}
-.mono{font-family:ui-monospace,Consolas,monospace}
-.muted{color:var(--muted)}
-@media (max-width:800px){body{flex-direction:column;height:auto;overflow:auto}#carte{height:70vh;flex:none}aside{width:100%;border-left:0}}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:13px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;display:flex;overflow:hidden}
+aside{width:320px;flex:none;background:var(--panel);border-right:1px solid var(--line);overflow-y:auto}
+main{flex:1;position:relative;min-width:0}
+svg#plan{width:100%;height:100%;display:block;background:var(--table);touch-action:none;cursor:grab}
+svg#plan.pan{cursor:grabbing}
+svg#plan.couper{cursor:crosshair}
+.bloc{padding:10px 14px;border-bottom:1px solid var(--line)}
+h1{font-size:15px;margin:0}
+h2{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:0 0 8px}
+label{display:flex;align-items:center;gap:6px;margin:4px 0}
+.row{display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin:5px 0}
+.row label{margin:0}
+select,input[type=number]{background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:3px 5px;font:inherit}
+input[type=number]{width:58px}
+button{background:var(--btn);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:4px 9px;font:inherit;cursor:pointer}
+button:hover{border-color:var(--acc2)}
+button.on{background:var(--acc2);color:#fff;border-color:var(--acc2)}
+button.go{background:var(--acc);color:#fff;border-color:var(--acc);font-weight:600}
+button:disabled{opacity:.4;cursor:default}
+.seg button{border-radius:0;margin-left:-1px}
+.seg button:first-child{border-radius:6px 0 0 6px}
+.seg button:last-child{border-radius:0 6px 6px 0}
+.seg{display:flex}
+small,.muted{color:var(--muted)}
+kbd{font:11px ui-monospace,Consolas,monospace;border:1px solid var(--line);border-radius:4px;padding:0 4px;background:var(--bg)}
+#hud{position:absolute;left:10px;bottom:10px;background:rgba(15,12,9,.78);color:#f3ead9;padding:6px 10px;border-radius:8px;font:12px ui-monospace,Consolas,monospace;pointer-events:none;white-space:pre}
+#msg{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:var(--acc);color:#fff;padding:6px 12px;border-radius:8px;display:none;max-width:80%}
+.piece .contour{fill:transparent;stroke:rgba(255,255,255,.55);stroke-width:1.2;vector-effect:non-scaling-stroke;pointer-events:all}
+.sans-contours .piece .contour{stroke:transparent}
+.piece.sel .contour{stroke:#ffd23f;stroke-width:2.5}
+.piece:hover .contour{stroke:rgba(255,210,63,.8)}
+.cadre{fill:none;stroke:rgba(255,255,255,.35);stroke-dasharray:8 6;stroke-width:1;vector-effect:non-scaling-stroke}
+.apercu polygon{fill:none;stroke:#ffd23f;stroke-width:1.5;stroke-dasharray:6 4;vector-effect:non-scaling-stroke}
+.trait{stroke:#ff4d4d;stroke-width:2;vector-effect:non-scaling-stroke}
+.num{fill:#fff;stroke:#000;stroke-width:3;paint-order:stroke;font-weight:700;text-anchor:middle;dominant-baseline:central;pointer-events:none;font-family:system-ui,sans-serif}
+#infosel{min-height:2.8em}
+@media (max-width:700px){body{flex-direction:column-reverse}aside{width:100%;height:45%;border-right:0;border-top:1px solid var(--line)}}
 </style>
 </head>
 <body>
-<div id="carte">
-  <svg id="svg" viewBox="0 0 5900 5900" preserveAspectRatio="xMidYMid meet">
-    <image href="map_2400.jpg" x="0" y="0" width="5900" height="5900"/>
-    <g id="guides"></g><g id="orbites"></g><g id="arcs"></g><g id="orig"></g><g id="rot"></g>
-  </svg>
-  <div id="hud"><div class="a" id="hudA">+0.0000°</div><div class="s" id="hudS">sens horaire · centre = croisement des diagonales</div></div>
-</div>
 <aside>
   <div class="bloc">
-    <h2>Angle par rapport à l'emplacement d'origine</h2>
-    <input type="range" id="ang" min="-180" max="180" step="0.0625" value="0">
-    <div class="row">
-      <input type="number" id="angN" step="0.0625" value="0"> °
-      <button data-d="-10">−10</button><button data-d="-1">−1</button><button data-d="-0.1">−0.1</button>
-      <button data-d="0.1">+0.1</button><button data-d="1">+1</button><button data-d="10">+10</button>
-    </div>
-    <div class="row">
-      <button data-a="0">0°</button><button data-a="103.5625">+103,5625°</button><button data-a="-103.5625">−103,5625°</button>
-      <button data-a="90">+90°</button><button data-a="-90">−90°</button><button data-a="180">180°</button>
-    </div>
-    <div class="row">
-      <button id="play">▶ Animer</button> vitesse <input type="range" id="vit" min="1" max="60" value="10" style="width:110px"> <span id="vitL" class="mono">10°/s</span>
-    </div>
-    <div class="row muted" style="font-size:12px">Positif = sens horaire à l'écran. Molette : zoom · glisser : déplacer · double-clic : vue entière.</div>
+    <h1>Tangram de la carte</h1>
+    <small>Découpez la carte, déplacez et tournez les pièces.</small>
   </div>
+
   <div class="bloc">
-    <h2>Affichage</h2>
+    <h2>Découpe</h2>
+    <label>Motif
+      <select id="motif">
+        <option value="entier">Carré entier (grille simple)</option>
+        <option value="tangram" selected>Tangram (7 pièces)</option>
+        <option value="diagonale">Diagonale (2 triangles)</option>
+        <option value="x">Croix en X (4 triangles)</option>
+        <option value="losange">Losange + 4 coins</option>
+        <option value="central">Triangle central (3 triangles)</option>
+        <option value="moulinet">Moulinet (4 rectangles + carré)</option>
+        <option value="bandes">Bandes</option>
+      </select>
+    </label>
     <div class="row">
-      <label><input type="checkbox" id="oOrb"> orbites</label>
-      <label><input type="checkbox" id="oArc" checked> arcs parcourus</label>
-      <label><input type="checkbox" id="oLab" checked> étiquettes</label>
-      <label><input type="checkbox" id="oOri" checked> origines</label>
+      <label>Colonnes <input type="number" id="cols" min="1" max="16" value="1"></label>
+      <label>Lignes <input type="number" id="rows" min="1" max="16" value="1"></label>
     </div>
-    <div class="row">tolérance <input type="range" id="tol" min="40" max="400" step="10" value="150" style="width:140px"> <span id="tolL" class="mono">150 px</span></div>
-  </div>
-  <div class="bloc">
-    <h2>Passages à l'angle courant</h2>
-    <div id="hits"></div>
-  </div>
-  <div class="bloc">
-    <h2>Balayage 360° (jeux cochés → toutes les origines)</h2>
-    <div id="scan"></div>
-  </div>
-  <div class="bloc" style="padding-bottom:6px">
-    <h2>Jeux de mots (cocher = tourne)</h2>
+    <div class="row" id="rowParam"><label><span id="lblParam">Paramètre</span> <input type="number" id="param" value="3"></label></div>
+    <div class="row">Rotation
+      <div class="seg" id="rotSeg">
+        <button data-r="0" class="on">0°</button><button data-r="1">90°</button><button data-r="2">180°</button><button data-r="3">270°</button>
+      </div>
+    </div>
+    <label><input type="checkbox" id="miroir"> Miroir</label>
+    <label><input type="checkbox" id="alt"> Alterner en damier (+90° une case sur deux)</label>
     <div class="row">
-      <button id="tous">Tous</button><button id="aucun">Aucun</button>
-      <button id="placer">📍 Replacer l'origine</button><button id="export">Copier JSON</button><button id="raz">Positions d'usine</button>
+      <button class="go" id="btnCut">Découper</button>
+      <label><input type="checkbox" id="apercu" checked> Aperçu</label>
     </div>
-    <div class="row muted" style="font-size:12px" id="aide">« case » = centre de la case du PDF ; « repéré » = position relevée sur la carte.</div>
+    <div class="row"><button id="btnTrait">✂ Coupe libre au trait <kbd>C</kbd></button></div>
+    <small>Coupe libre : tirez un trait sur la table, chaque pièce touchée est coupée selon cette droite.</small>
   </div>
-  <div id="liste"></div>
+
+  <div class="bloc">
+    <h2>Pièce sélectionnée</h2>
+    <div id="infosel" class="muted">Aucune — cliquez sur une pièce.</div>
+    <div class="row">
+      <button id="btnRotG" title="Tourner de 90° à gauche (E ou clic droit)">↺ 90°</button>
+      <button id="btnRotD" title="Tourner de 90° à droite (R ou double-clic)">↻ 90°</button>
+      <button id="btnFlip" title="Retourner (F)">⇋ Miroir</button>
+      <button id="btnHome1" title="Remettre cette pièce à sa place (H)">⌂</button>
+    </div>
+  </div>
+
+  <div class="bloc">
+    <h2>Disposition</h2>
+    <div class="row">
+      <button id="btnScatter">Éparpiller</button>
+      <button id="btnShuffle">Mélanger (rotations)</button>
+      <button id="btnHome">Tout remettre</button>
+    </div>
+    <div class="row">
+      <button id="btnUndo">Annuler <kbd>Ctrl Z</kbd></button>
+      <button id="btnFit">Recadrer</button>
+    </div>
+  </div>
+
+  <div class="bloc">
+    <h2>Affichage et accroche</h2>
+    <label>Carte fantôme <input type="range" id="ghost" min="0" max="100" value="12"></label>
+    <label>Accroche grille
+      <select id="snap">
+        <option value="0">aucune</option>
+        <option value="4">1/4 de carte</option>
+        <option value="8">1/8</option>
+        <option value="12">1/12</option>
+        <option value="16" selected>1/16</option>
+        <option value="24">1/24</option>
+        <option value="48">1/48</option>
+      </select>
+    </label>
+    <label><input type="checkbox" id="aimant" checked> Aimant aux sommets voisins</label>
+    <label><input type="checkbox" id="showGrid"> Afficher la grille</label>
+    <label><input type="checkbox" id="contours" checked> Contours des pièces</label>
+    <label><input type="checkbox" id="numeros"> Numéros des pièces</label>
+  </div>
+
+  <div class="bloc">
+    <h2>Fichiers</h2>
+    <div class="row">
+      <button id="btnPng">Exporter PNG</button>
+      <button id="btnSave">Sauver (.json)</button>
+      <button id="btnLoad">Ouvrir (.json)</button>
+    </div>
+    <div class="row"><button id="btnImg">Charger une autre image…</button></div>
+    <input type="file" id="fImg" accept="image/*" hidden>
+    <input type="file" id="fJson" accept=".json,application/json" hidden>
+    <small>Si l'export PNG est bloqué (fichier ouvert en local), rechargez la carte par « Charger une autre image ».</small>
+  </div>
+
+  <div class="bloc">
+    <h2>Raccourcis</h2>
+    <small>
+      Glisser : déplacer · <kbd>R</kbd>/double-clic : ↻ · <kbd>E</kbd>/clic droit : ↺ · <kbd>F</kbd> miroir ·
+      flèches : décaler (<kbd>Maj</kbd> ×5) · <kbd>H</kbd> remettre · <kbd>C</kbd> coupe libre · <kbd>Échap</kbd> ·
+      molette : zoom · glisser le fond : se déplacer
+    </small>
+  </div>
 </aside>
+
+<main>
+  <svg id="plan" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <image id="carte" href="map_2400.jpg" width="2400" height="2400" preserveAspectRatio="none"/>
+      <pattern id="motifGrille" patternUnits="userSpaceOnUse" width="150" height="150">
+        <path id="motifGrilleP" d="M150 0H0V150" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="1" vector-effect="non-scaling-stroke"/>
+      </pattern>
+    </defs>
+    <rect id="grilleFond" x="-30000" y="-30000" width="60000" height="60000" fill="url(#motifGrille)" display="none" pointer-events="none"/>
+    <use id="fantome" href="#carte" opacity=".12" pointer-events="none"/>
+    <rect id="cadre" class="cadre" x="0" y="0" width="2400" height="2400" pointer-events="none"/>
+    <g id="gPieces"></g>
+    <g id="gApercu" class="apercu" pointer-events="none"></g>
+    <g id="gNums" pointer-events="none"></g>
+    <g id="gOutil" pointer-events="none"></g>
+  </svg>
+  <div id="hud"></div>
+  <div id="msg"></div>
+</main>
+
 <script>
-const W=5900, C={x:W/2,y:W/2};   // croisement des diagonales du carré
-const USINE=[{"n":"Pique de cœurs","c":"A3","x":184,"y":922,"s":"case"},{"n":"Et puits s'en font","c":"A7","x":401,"y":2352,"s":"repéré"},{"n":"L'Anse Lodulac","c":"B10","x":809,"y":3542,"s":"repéré"},{"n":"Ferme de la meunière","c":"A10","x":275,"y":3542,"s":"repéré"},{"n":"Maison de Père-Grand","c":"D15","x":1313,"y":5100,"s":"repéré"},{"n":"Gué part sur l'eau muette","c":"D12","x":1291,"y":4241,"s":"case"},{"n":"Les temps des fées","c":"B11","x":553,"y":3872,"s":"case"},{"n":"Le Prince Pas Charmant","c":"E12","x":1634,"y":4306,"s":"repéré"},{"n":"Le Champs PINION","c":"F10","x":1924,"y":3649,"s":"repéré"},{"n":"Place Tronc","c":"C9","x":763,"y":2977,"s":"repéré"},{"n":"Arbre Toi et Moi","c":"D2","x":1374,"y":565,"s":"repéré"},{"n":"Le Moule imparfait","c":"F1","x":2028,"y":184,"s":"case"},{"n":"L'époux vente et taille","c":"H1","x":2871,"y":260,"s":"repéré"},{"n":"Les chariots à savon","c":"J3","x":3429,"y":919,"s":"repéré"},{"n":"Cour des Chevaliers","c":"G4","x":2275,"y":1557,"s":"repéré"},{"n":"Le pré en bulles","c":"I4","x":3268,"y":1466,"s":"repéré"},{"n":"Épave du Joli Roger","c":"M4","x":4398,"y":1344,"s":"repéré"},{"n":"Église des anges chantés","c":"P4","x":5716,"y":1291,"s":"case"},{"n":"Mine des 10 nains","c":"P5","x":5716,"y":1659,"s":"case"},{"n":"Les mille et un tapis","c":"N6","x":5192,"y":2153,"s":"repéré"},{"n":"Tombes O","c":"N7","x":4901,"y":2351,"s":"repéré"},{"n":"La grande Sirène","c":"L7","x":4352,"y":2351,"s":"repéré"},{"n":"Observatoire de Grand Alf","c":"M8","x":4474,"y":2886,"s":"repéré"},{"n":"Fontaine de Jean","c":"O9","x":5347,"y":3134,"s":"case"},{"n":"Le Carrosse de midi","c":"N12","x":5024,"y":4077,"s":"repéré"},{"n":"Pomme aux Sept Réveils","c":"P13","x":5818,"y":4565,"s":"repéré"},{"n":"Volcan aux S pris","c":"L12","x":4153,"y":4092,"s":"repéré"},{"n":"Galette des reines","c":"M13","x":4520,"y":4764,"s":"repéré"},{"n":"La Clochette du K-Fée","c":"K15","x":3671,"y":5364,"s":"repéré"},{"n":"Les 6 eaux magiques","c":"J14","x":3405,"y":4856,"s":"repéré"},{"n":"Unités Royales","c":"I16","x":3176,"y":5436,"s":"repéré"},{"n":"Pied droit de 5 lieues 1/2","c":"J12","x":3588,"y":4168,"s":"repéré"},{"n":"Pied gauche de 5 lieues 1/2","c":"I11","x":3084,"y":3710,"s":"repéré"},{"n":"La Baguette Brise-Sort","c":"G13","x":2351,"y":4672,"s":"repéré"}];
-const CLE='rotation_jeux_de_mots_v1';
-let J=JSON.parse(JSON.stringify(USINE));
-try{const s=JSON.parse(localStorage.getItem(CLE)||'null'); if(s&&s.length===J.length) J=s;}catch(e){}
-J.forEach(j=>{if(j.on===undefined) j.on=true;});
-const sauve=()=>{try{localStorage.setItem(CLE,JSON.stringify(J))}catch(e){}};
-const $=id=>document.getElementById(id), NS='http://www.w3.org/2000/svg';
-const svg=$('svg');
-const el=(t,a,p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);p&&p.appendChild(e);return e};
-const HUE=i=>`hsl(${(i*137.508)%360} 85% 50%)`;
-let A=0, sel=-1, mode=false, tol=150;
+"use strict";
+const NS = 'http://www.w3.org/2000/svg';
+const $ = s => document.querySelector(s);
+const svg = $('#plan');
+const gPieces = $('#gPieces'), gApercu = $('#gApercu'), gNums = $('#gNums'), gOutil = $('#gOutil');
+const CLE = 'tangram-carte-v1';
 
-// ---- géométrie
-const rot=(p,deg)=>{const a=deg*Math.PI/180,dx=p.x-C.x,dy=p.y-C.y;return{x:C.x+dx*Math.cos(a)-dy*Math.sin(a),y:C.y+dx*Math.sin(a)+dy*Math.cos(a)}};
-const pol=p=>({r:Math.hypot(p.x-C.x,p.y-C.y),t:Math.atan2(p.y-C.y,p.x-C.x)*180/Math.PI});
-const norm=a=>{a=((a+180)%360+360)%360-180;return a===-180?180:a};
-const fmt=a=>(a>=0?'+':'−')+Math.abs(a).toFixed(4)+'°';
+let W = 2400, H = 2400, SRC = 'map_2400.jpg';
+let pieces = [];          // {id, poly:[[x,y]] coords d'origine, c:[x,y], t:[x,y], rot:0..3, flip:bool}
+let nextId = 1, sel = null, mode = 'deplacer';
+let vb = {x: -400, y: -400, w: 3200, h: 3200};
+const undoStack = [];
+let P = {motif: 'tangram', cols: 1, rows: 1, param: 3, rot: 0, mir: false, alt: false};
 
-// ---- vue (zoom / déplacement)
-let vb={x:0,y:0,w:W,h:W};
-const setVB=()=>{svg.setAttribute('viewBox',`${vb.x} ${vb.y} ${vb.w} ${vb.h}`);dessine()};
-const ech=()=>vb.w/Math.max(1,Math.min(svg.clientWidth,svg.clientHeight)); // unités carte par pixel écran
-const pt=e=>{const m=svg.getScreenCTM().inverse(),p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(m)};
-svg.addEventListener('wheel',e=>{e.preventDefault();const p=pt(e),k=e.deltaY>0?1.2:1/1.2;const nw=Math.min(W*1.5,Math.max(150,vb.w*k));const f=nw/vb.w;vb={x:p.x-(p.x-vb.x)*f,y:p.y-(p.y-vb.y)*f,w:nw,h:nw};setVB()},{passive:false});
-let dr=null;
-svg.addEventListener('pointerdown',e=>{if(mode)return;dr={x:e.clientX,y:e.clientY,vx:vb.x,vy:vb.y,m:false};svg.setPointerCapture(e.pointerId)});
-svg.addEventListener('pointermove',e=>{if(!dr)return;const s=ech(),dx=e.clientX-dr.x,dy=e.clientY-dr.y;if(Math.abs(dx)+Math.abs(dy)>3){dr.m=true;svg.classList.add('drag')}vb.x=dr.vx-dx*s;vb.y=dr.vy-dy*s;setVB()});
-svg.addEventListener('pointerup',()=>{dr=null;svg.classList.remove('drag')});
-svg.addEventListener('dblclick',()=>{vb={x:0,y:0,w:W,h:W};setVB()});
-svg.addEventListener('click',e=>{if(!mode||sel<0)return;const p=pt(e);J[sel].x=Math.round(p.x);J[sel].y=Math.round(p.y);J[sel].s='replacé';sauve();mode=false;$('placer').classList.remove('on');svg.classList.remove('placer');tout()});
+function el(tag, attrs = {}) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  return e;
+}
+function msg(t, ms = 3500) {
+  const m = $('#msg'); m.textContent = t; m.style.display = 'block';
+  clearTimeout(msg.h); msg.h = setTimeout(() => m.style.display = 'none', ms);
+}
 
-// ---- dessin
-function guides(){const g=$('guides');g.innerHTML='';const s=ech();
-  el('line',{x1:0,y1:0,x2:W,y2:W,stroke:'#b3261e','stroke-width':2*s,'stroke-dasharray':`${10*s} ${8*s}`,opacity:.7},g);
-  el('line',{x1:W,y1:0,x2:0,y2:W,stroke:'#b3261e','stroke-width':2*s,'stroke-dasharray':`${10*s} ${8*s}`,opacity:.7},g);
-  el('circle',{cx:C.x,cy:C.y,r:9*s,fill:'none',stroke:'#b3261e','stroke-width':3*s},g);
-  el('circle',{cx:C.x,cy:C.y,r:2.5*s,fill:'#b3261e'},g);}
-function dessine(){
-  const s=ech(), fs=13*s;
-  guides();
-  const go=$('orbites'),ga=$('arcs'),gO=$('orig'),gR=$('rot');[go,ga,gO,gR].forEach(g=>g.innerHTML='');
-  J.forEach((j,i)=>{
-    const col=HUE(i), p=pol(j), q=rot(j,A), hl=i===sel;
-    if($('oOri').checked){
-      el('circle',{cx:j.x,cy:j.y,r:(hl?9:6)*s,fill:'rgba(255,255,255,.55)',stroke:col,'stroke-width':2.5*s},gO);
-      if($('oLab').checked&&(hl||!j.on)) txt(gO,j.x,j.y,j.c,fs*.9,col,s);
+/* ---------- Motifs (carré unité) ---------- */
+const MOTIFS = {
+  entier: () => [[[0,0],[1,0],[1,1],[0,1]]],
+  diagonale: () => [[[0,0],[1,0],[1,1]], [[0,0],[1,1],[0,1]]],
+  x: () => [[[0,0],[1,0],[.5,.5]], [[1,0],[1,1],[.5,.5]], [[1,1],[0,1],[.5,.5]], [[0,1],[0,0],[.5,.5]]],
+  losange: () => [[[.5,0],[1,.5],[.5,1],[0,.5]], [[0,0],[.5,0],[0,.5]], [[.5,0],[1,0],[1,.5]], [[1,.5],[1,1],[.5,1]], [[0,.5],[.5,1],[0,1]]],
+  central: () => [[[0,0],[1,0],[.5,1]], [[0,0],[.5,1],[0,1]], [[1,0],[1,1],[.5,1]]],
+  tangram: () => [
+    [[0,0],[1,0],[.5,.5]],
+    [[0,0],[.5,.5],[0,1]],
+    [[1,.5],[1,1],[.5,1]],
+    [[.5,.5],[.75,.25],[.75,.75]],
+    [[0,1],[.25,.75],[.5,1]],
+    [[.5,.5],[.75,.75],[.5,1],[.25,.75]],
+    [[1,0],[1,.5],[.75,.75],[.75,.25]],
+  ],
+  moulinet: p => {
+    const s = Math.min(.9, Math.max(.05, p / 100)), h = (1 - s) / 2, k = (1 + s) / 2;
+    return [[[0,0],[k,0],[k,h],[0,h]], [[k,0],[1,0],[1,k],[k,k]], [[h,k],[1,k],[1,1],[h,1]], [[0,h],[h,h],[h,1],[0,1]], [[h,h],[k,h],[k,k],[h,k]]];
+  },
+  bandes: p => {
+    const n = Math.max(1, Math.min(24, Math.round(p))), r = [];
+    for (let i = 0; i < n; i++) r.push([[0,i/n],[1,i/n],[1,(i+1)/n],[0,(i+1)/n]]);
+    return r;
+  },
+};
+const PARAMS = {
+  moulinet: {lbl: 'Carré central (%)', def: 34, min: 5, max: 90},
+  bandes: {lbl: 'Nombre de bandes', def: 3, min: 1, max: 24},
+};
+const rotU = ([x, y]) => [1 - y, x];       // +90° horaire autour du centre
+const mirU = ([x, y]) => [1 - x, y];
+
+function genererPolys() {
+  const base = MOTIFS[P.motif](P.param), out = [];
+  for (let j = 0; j < P.rows; j++) for (let i = 0; i < P.cols; i++) {
+    const k = (P.rot + (P.alt && (i + j) % 2 ? 1 : 0)) % 4;
+    for (const poly of base) {
+      out.push(poly.map(pt => {
+        let q = P.mir ? mirU(pt) : pt;
+        for (let r = 0; r < k; r++) q = rotU(q);
+        return [(i + q[0]) / P.cols * W, (j + q[1]) / P.rows * H];
+      }));
     }
-    if(!j.on) return;
-    if($('oOrb').checked) el('circle',{cx:C.x,cy:C.y,r:p.r,fill:'none',stroke:col,'stroke-width':1*s,opacity:.45},go);
-    if($('oArc').checked&&Math.abs(A)>0.01){
-      const large=Math.abs(A)>180?1:0, sw=A>0?1:0;
-      el('path',{d:`M${j.x} ${j.y} A${p.r} ${p.r} 0 ${large} ${sw} ${q.x} ${q.y}`,fill:'none',stroke:col,'stroke-width':(hl?3:1.6)*s,'stroke-dasharray':`${6*s} ${4*s}`,opacity:.85},ga);
+  }
+  return out;
+}
+
+/* ---------- Géométrie ---------- */
+function mat(pc) {
+  let a = pc.flip ? -1 : 1, b = 0, c = 0, d = 1;
+  for (let k = 0; k < pc.rot; k++) [a, b, c, d] = [-b, a, -d, c];
+  const e = pc.c[0] + pc.t[0] - (a * pc.c[0] + c * pc.c[1]);
+  const f = pc.c[1] + pc.t[1] - (b * pc.c[0] + d * pc.c[1]);
+  return {a, b, c, d, e, f};
+}
+const toWorld = (m, [x, y]) => [m.a * x + m.c * y + m.e, m.b * x + m.d * y + m.f];
+const toLocal = (m, [X, Y]) => { const u = X - m.e, v = Y - m.f; return [m.a * u + m.b * v, m.c * u + m.d * v]; };
+const worldPoly = pc => { const m = mat(pc); return pc.poly.map(p => toWorld(m, p)); };
+function bbox(pts) {
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (const [x, y] of pts) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
+  return {x: x0, y: y0, w: x1 - x0, h: y1 - y0, cx: (x0 + x1) / 2, cy: (y0 + y1) / 2};
+}
+const centroide = poly => [poly.reduce((s, p) => s + p[0], 0) / poly.length, poly.reduce((s, p) => s + p[1], 0) / poly.length];
+const aire = poly => Math.abs(poly.reduce((s, p, i) => { const q = poly[(i + 1) % poly.length]; return s + p[0] * q[1] - q[0] * p[1]; }, 0)) / 2;
+const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+
+function couperPoly(poly, A, B) {       // coupe un polygone convexe par la droite AB
+  const L = [], R = [], eps = 1e-7 * Math.hypot(B[0] - A[0], B[1] - A[1]) * W;
+  for (let i = 0; i < poly.length; i++) {
+    const p = poly[i], q = poly[(i + 1) % poly.length];
+    const sp = cross(A, B, p), sq = cross(A, B, q);
+    if (sp >= -eps) L.push(p);
+    if (sp <= eps) R.push(p);
+    if ((sp > eps && sq < -eps) || (sp < -eps && sq > eps)) {
+      const t = sp / (sp - sq), x = [p[0] + t * (q[0] - p[0]), p[1] + t * (q[1] - p[1])];
+      L.push(x); R.push(x);
     }
-    if(hl) el('line',{x1:C.x,y1:C.y,x2:q.x,y2:q.y,stroke:col,'stroke-width':1.5*s,opacity:.8},gR);
-    el('circle',{cx:q.x,cy:q.y,r:(hl?11:7)*s,fill:col,stroke:'#fff','stroke-width':2*s},gR);
-    if(tol&&hl) el('circle',{cx:q.x,cy:q.y,r:tol,fill:'none',stroke:col,'stroke-width':1*s,'stroke-dasharray':`${3*s} ${3*s}`},gR);
-    if($('oLab').checked) txt(gR,q.x+10*s,q.y-8*s,`${j.c} ${j.n}`,hl?fs*1.15:fs,col,s,true);
+  }
+  return [L, R];
+}
+function segCoupe(a1, a2, b1, b2) {
+  const d1 = cross(b1, b2, a1), d2 = cross(b1, b2, a2), d3 = cross(a1, a2, b1), d4 = cross(a1, a2, b2);
+  return ((d1 > 0) !== (d2 > 0)) && ((d3 > 0) !== (d4 > 0));
+}
+function dansPoly(pt, poly) {
+  let s = 0;
+  for (let i = 0; i < poly.length; i++) { const c = cross(poly[i], poly[(i + 1) % poly.length], pt); if (c !== 0) { if (s === 0) s = Math.sign(c); else if (Math.sign(c) !== s) return false; } }
+  return true;
+}
+
+/* ---------- Pièces ---------- */
+function nouvellePiece(poly, modele) {
+  return {id: nextId++, poly, c: modele ? modele.c.slice() : centroide(poly), t: modele ? modele.t.slice() : [0, 0], rot: modele ? modele.rot : 0, flip: modele ? modele.flip : false};
+}
+function decouper() {
+  pousserUndo();
+  nextId = 1;
+  pieces = genererPolys().map(p => nouvellePiece(p));
+  sel = null;
+  toutRendre(); majApercu(true);
+  sauver();
+  msg(pieces.length + ' pièces découpées', 1800);
+}
+
+const elems = new Map();
+function toutRendre() {
+  gPieces.replaceChildren(); elems.clear();
+  for (const pc of pieces) creerElem(pc);
+  majNums(); majInfo();
+}
+function creerElem(pc) {
+  const pts = pc.poly.map(p => p.join(',')).join(' ');
+  const g = el('g', {class: 'piece'}); g.dataset.id = pc.id;
+  const cp = el('clipPath', {id: 'cp' + pc.id}); cp.appendChild(el('polygon', {points: pts}));
+  const u = el('use', {href: '#carte', 'clip-path': `url(#cp${pc.id})`});
+  const o = el('polygon', {points: pts, class: 'contour'});
+  g.append(cp, u, o); gPieces.appendChild(g); elems.set(pc.id, g);
+  majElem(pc);
+}
+function majElem(pc) {
+  const g = elems.get(pc.id); if (!g) return;
+  const m = mat(pc);
+  g.setAttribute('transform', `matrix(${m.a} ${m.b} ${m.c} ${m.d} ${m.e} ${m.f})`);
+  g.classList.toggle('sel', sel === pc);
+}
+function majNums() {
+  gNums.replaceChildren();
+  if (!$('#numeros').checked) return;
+  const fs = Math.max(W, H) / 45;
+  pieces.forEach(pc => {
+    const [x, y] = centroide(worldPoly(pc));
+    const t = el('text', {x, y, class: 'num', 'font-size': fs}); t.textContent = pc.id; gNums.appendChild(t);
   });
 }
-function txt(g,x,y,t,fs,col,s,start){const e=el('text',{x,y,'font-size':fs,'font-weight':700,fill:'#fff',stroke:'#000','stroke-width':3*s,'paint-order':'stroke','text-anchor':start?'start':'middle',style:'font-family:system-ui,sans-serif'},g);e.textContent=t;return e}
-
-// ---- passages
-function passages(){
-  const h=$('hits');h.innerHTML='';const L=[];
-  J.forEach((j,i)=>{if(!j.on)return;const q=rot(j,A);
-    J.forEach((k,m)=>{if(m===i)return;const d=Math.hypot(q.x-k.x,q.y-k.y);if(d<=tol)L.push({i,m,d})});});
-  L.sort((a,b)=>a.d-b.d);
-  if(!L.length){h.innerHTML='<div class="muted">Aucun jeu tourné à moins de '+tol+' px d\'une origine.</div>';return}
-  L.forEach(o=>{const d=document.createElement('div');d.innerHTML=`<b style="color:${HUE(o.i)}">${J[o.i].c} ${J[o.i].n}</b> → sur <b>${J[o.m].c} ${J[o.m].n}</b> <span class="mono muted">(${Math.round(o.d)} px)</span>`;h.appendChild(d)});
+function majInfo() {
+  const i = $('#infosel');
+  ['#btnRotG', '#btnRotD', '#btnFlip', '#btnHome1'].forEach(s => $(s).disabled = !sel);
+  if (!sel) { i.textContent = 'Aucune — cliquez sur une pièce.'; i.className = 'muted'; return; }
+  const b = bbox(worldPoly(sel)), ob = bbox(sel.poly);
+  i.className = '';
+  i.innerHTML = `Pièce <b>#${sel.id}</b> · rotation <b>${sel.rot * 90}°</b>${sel.flip ? ' · <b>miroir</b>' : ''}<br>` +
+    `<small>origine (${Math.round(ob.x)}, ${Math.round(ob.y)}) ${Math.round(ob.w)}×${Math.round(ob.h)} → table (${Math.round(b.x)}, ${Math.round(b.y)})</small>`;
 }
-function balayage(){
-  const sc=$('scan');sc.innerHTML='';const L=[];
-  J.forEach((j,i)=>{if(!j.on)return;const a=pol(j);
-    J.forEach((k,m)=>{if(m===i)return;const b=pol(k);
-      // distance minimale le long de l'orbite = |r1 - r2|, atteinte à l'angle θb − θa
-      const dmin=Math.abs(a.r-b.r);if(dmin>tol)return;
-      L.push({i,m,ang:norm(b.t-a.t),d:dmin})})});
-  L.sort((x,y)=>x.d-y.d);
-  if(!L.length){sc.innerHTML='<div class="muted">Aucune orbite ne passe à moins de '+tol+' px d\'une origine.</div>';return}
-  sc.insertAdjacentHTML('beforeend',`<div class="muted">${L.length} passages ; cliquer pour y aller. Trié par distance minimale.</div>`);
-  L.forEach(o=>{const d=document.createElement('div');const near=Math.abs(norm(o.ang-A))<0.05;
-    d.innerHTML=`<span class="mono" style="${near?'color:var(--ok);font-weight:700':''}">${fmt(o.ang)}</span> <b style="color:${HUE(o.i)}">${J[o.i].c}</b> → ${J[o.m].c} ${J[o.m].n} <span class="mono muted">(${Math.round(o.d)} px)</span>`;
-    d.title=`${J[o.i].n} → ${J[o.m].n}`;d.onclick=()=>{sel=o.i;setA(Math.round(o.ang*10000)/10000);liste()};sc.appendChild(d)});
+function selectionner(pc) {
+  const old = sel; sel = pc;
+  if (old) majElem(old);
+  if (pc) { majElem(pc); auPremierPlan(pc); }
+  majInfo();
+}
+function auPremierPlan(pc) {
+  const i = pieces.indexOf(pc); if (i < 0) return;
+  pieces.splice(i, 1); pieces.push(pc); gPieces.appendChild(elems.get(pc.id));
 }
 
-// ---- liste
-function liste(){
-  const l=$('liste');l.innerHTML='';
-  J.forEach((j,i)=>{const d=document.createElement('div');d.className='it'+(i===sel?' sel':'');
-    d.innerHTML=`<input type="checkbox" ${j.on?'checked':''}><span class="c" style="color:${HUE(i)}">${j.c}</span><span class="n">${j.n}</span><span class="s">${j.s}</span>`;
-    d.querySelector('input').onchange=e=>{j.on=e.target.checked;sauve();tout()};
-    d.querySelector('.n').onclick=()=>{sel=sel===i?-1:i;liste();dessine()};
-    l.appendChild(d)});
+/* ---------- Accroche ---------- */
+const pasGrille = () => { const n = +$('#snap').value; return n ? Math.max(W, H) / n : 0; };
+function accrocherGrille(pc) {
+  const s = pasGrille(); if (!s) return;
+  const b = bbox(worldPoly(pc));
+  pc.t[0] += Math.round(b.x / s) * s - b.x;
+  pc.t[1] += Math.round(b.y / s) * s - b.y;
 }
-function tout(){dessine();passages();balayage();liste()}
+const echelle = () => { const m = svg.getScreenCTM(); return m && m.a ? 1 / m.a : vb.w / 1000; };
+function sommetsAutres(exclu) {
+  const r = [[0,0],[W,0],[W,H],[0,H]];
+  for (const pc of pieces) if (pc !== exclu) r.push(...worldPoly(pc));
+  return r;
+}
+function accrocherSommets(pc) {
+  if (!$('#aimant').checked) return false;
+  const tol = 14 * echelle(), mine = worldPoly(pc), autres = sommetsAutres(pc);
+  let best = null, bd = tol;
+  for (const v of mine) for (const w of autres) {
+    const d = Math.hypot(w[0] - v[0], w[1] - v[1]);
+    if (d < bd) { bd = d; best = [w[0] - v[0], w[1] - v[1]]; }
+  }
+  if (best) { pc.t[0] += best[0]; pc.t[1] += best[1]; return true; }
+  return false;
+}
+function accrocherPoint(p) {
+  if ($('#aimant').checked) {
+    const tol = 14 * echelle(); let best = null, bd = tol;
+    for (const w of sommetsAutres(null)) { const d = Math.hypot(w[0] - p[0], w[1] - p[1]); if (d < bd) { bd = d; best = w; } }
+    if (best) return best.slice();
+  }
+  const s = pasGrille();
+  return s ? [Math.round(p[0] / s) * s, Math.round(p[1] / s) * s] : p;
+}
 
-// ---- angle
-function setA(a){A=Math.max(-180,Math.min(180,+a||0));$('ang').value=A;$('angN').value=+A.toFixed(4);
-  $('hudA').textContent=fmt(A);
-  const autre=A>0?A-360:A+360;
-  $('hudS').textContent=(A===0?'position d\'origine':`${A>0?'sens horaire':'sens anti-horaire'} · soit ${fmt(autre)} dans l'autre sens`)+' · centre = croisement des diagonales';
-  dessine();passages();balayage();}
-$('ang').oninput=e=>setA(e.target.value);
-$('angN').onchange=e=>setA(e.target.value);
-document.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>setA(+(A+ +b.dataset.d).toFixed(4)));
-document.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>setA(+b.dataset.a));
-['oOrb','oArc','oLab','oOri'].forEach(id=>$(id).onchange=dessine);
-$('tol').oninput=e=>{tol=+e.target.value;$('tolL').textContent=tol+' px';dessine();passages();balayage()};
-$('vit').oninput=e=>$('vitL').textContent=e.target.value+'°/s';
-let anim=null,t0=0;
-$('play').onclick=()=>{if(anim){cancelAnimationFrame(anim);anim=null;$('play').textContent='▶ Animer';$('play').classList.remove('on');return}
-  $('play').textContent='⏸ Pause';$('play').classList.add('on');t0=performance.now();
-  const f=t=>{const dt=(t-t0)/1000;t0=t;let a=A+dt*+$('vit').value;if(a>180)a-=360;A=a;$('ang').value=a;$('angN').value=+a.toFixed(4);$('hudA').textContent=fmt(a);$('hudS').textContent='animation…';dessine();passages();anim=requestAnimationFrame(f)};
-  anim=requestAnimationFrame(f)};
-$('tous').onclick=()=>{J.forEach(j=>j.on=true);sauve();tout()};
-$('aucun').onclick=()=>{J.forEach(j=>j.on=false);sauve();tout()};
-$('placer').onclick=()=>{if(sel<0){$('aide').textContent='Cliquez d\'abord sur un nom dans la liste, puis sur « Replacer », puis sur la carte.';return}
-  mode=!mode;$('placer').classList.toggle('on',mode);svg.classList.toggle('placer',mode);
-  $('aide').textContent=mode?`Cliquez sur la carte à l'emplacement exact de « ${J[sel].n} ».`:'« case » = centre de la case du PDF ; « repéré » = position relevée sur la carte.'};
-$('export').onclick=()=>{const t=JSON.stringify(J.map(({n,c,x,y,s})=>({n,c,x,y,s})));(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>$('aide').textContent='JSON copié dans le presse-papiers.',()=>prompt('JSON :',t))};
-$('raz').onclick=()=>{if(!confirm('Revenir aux positions de départ ?'))return;J=JSON.parse(JSON.stringify(USINE)).map(j=>({...j,on:true}));sauve();tout()};
-window.addEventListener('resize',dessine);
-liste();setA(0);
+/* ---------- Opérations ---------- */
+function tourner(pc, dir) {
+  if (!pc) return;
+  pousserUndo();
+  const avant = bbox(worldPoly(pc));
+  pc.rot = (pc.rot + dir + 4) % 4;
+  const apres = bbox(worldPoly(pc));
+  pc.t[0] += avant.cx - apres.cx; pc.t[1] += avant.cy - apres.cy;
+  accrocherGrille(pc);
+  fin(pc);
+}
+function retourner(pc) {
+  if (!pc) return;
+  pousserUndo();
+  const avant = bbox(worldPoly(pc));
+  pc.flip = !pc.flip;
+  // garder un miroir horizontal visuel quelle que soit la rotation
+  if (pc.rot % 2) pc.rot = (pc.rot + 2) % 4;
+  const apres = bbox(worldPoly(pc));
+  pc.t[0] += avant.cx - apres.cx; pc.t[1] += avant.cy - apres.cy;
+  accrocherGrille(pc);
+  fin(pc);
+}
+function remettre(pc) { pc.t = [0, 0]; pc.rot = 0; pc.flip = false; pc.c = centroide(pc.poly); }
+function fin(pc) { if (pc) majElem(pc); majNums(); majInfo(); sauver(); }
+
+function eparpiller(sansUndo) {
+  if (sansUndo !== true) pousserUndo();
+  const ordre = pieces.slice().sort(() => Math.random() - .5);
+  const tailles = ordre.map(pc => bbox(worldPoly(pc)));
+  const cell = Math.max(...tailles.map(b => Math.max(b.w, b.h))) * 1.12;
+  const n = ordre.length, cols = Math.ceil(Math.sqrt(n * 1.6));
+  const x0 = W + cell * .4, y0 = 0;
+  ordre.forEach((pc, i) => {
+    const b = tailles[i], cx = x0 + (i % cols + .5) * cell, cy = y0 + (Math.floor(i / cols) + .5) * cell;
+    pc.t[0] += cx - b.cx; pc.t[1] += cy - b.cy;
+    accrocherGrille(pc); majElem(pc);
+  });
+  majNums(); majInfo(); sauver(); cadrer();
+}
+function melanger() {
+  pousserUndo();
+  for (const pc of pieces) {
+    const avant = bbox(worldPoly(pc));
+    pc.rot = Math.floor(Math.random() * 4);
+    const apres = bbox(worldPoly(pc));
+    pc.t[0] += avant.cx - apres.cx; pc.t[1] += avant.cy - apres.cy;
+    accrocherGrille(pc); majElem(pc);
+  }
+  eparpiller(true);
+}
+function couperAuTrait(A, B) {
+  if (Math.hypot(B[0] - A[0], B[1] - A[1]) < 1e-6) return;
+  pousserUndo();
+  let n = 0;
+  const res = [];
+  for (const pc of pieces) {
+    const wp = worldPoly(pc);
+    const touche = dansPoly(A, wp) || dansPoly(B, wp) || wp.some((p, i) => segCoupe(A, B, p, wp[(i + 1) % wp.length]));
+    if (!touche) { res.push(pc); continue; }
+    const m = mat(pc);
+    const [L, R] = couperPoly(pc.poly, toLocal(m, A), toLocal(m, B));
+    const seuil = aire(pc.poly) * 1e-4;
+    if (L.length < 3 || R.length < 3 || aire(L) < seuil || aire(R) < seuil) { res.push(pc); continue; }
+    res.push(nouvellePiece(L, pc), nouvellePiece(R, pc)); n++;
+  }
+  if (!n) { undoStack.pop(); msg('Le trait ne coupe aucune pièce', 1800); return; }
+  pieces = res; sel = null; toutRendre(); sauver();
+  msg(n + ' pièce(s) coupée(s) → ' + pieces.length + ' pièces', 1800);
+}
+
+/* ---------- Annuler / sauvegarde ---------- */
+const etat = () => JSON.stringify({W, H, nextId, pieces: pieces.map(({id, poly, c, t, rot, flip}) => ({id, poly, c, t, rot, flip}))});
+function pousserUndo() { undoStack.push(etat()); if (undoStack.length > 300) undoStack.shift(); }
+function restaurer(s) {
+  const o = typeof s === 'string' ? JSON.parse(s) : s;
+  if (o.W && (o.W !== W || o.H !== H)) msg('Attention : disposition prévue pour une image ' + o.W + '×' + o.H);
+  nextId = o.nextId || 1; pieces = o.pieces; sel = null; toutRendre();
+}
+function annuler() { if (!undoStack.length) return msg('Rien à annuler', 1200); restaurer(undoStack.pop()); sauver(); }
+function sauver() {
+  clearTimeout(sauver.h);
+  sauver.h = setTimeout(() => { try { localStorage.setItem(CLE, JSON.stringify({etat: etat(), P})); } catch (e) {} }, 250);
+}
+
+/* ---------- Vue ---------- */
+function appliquerVue() { svg.setAttribute('viewBox', `${vb.x} ${vb.y} ${vb.w} ${vb.h}`); }
+function cadrer() {
+  const pts = [[0,0],[W,H]]; for (const pc of pieces) pts.push(...worldPoly(pc));
+  const b = bbox(pts), m = Math.max(b.w, b.h) * .06;
+  const ar = svg.clientWidth / Math.max(1, svg.clientHeight);
+  let w = b.w + 2 * m, h = b.h + 2 * m;
+  if (w / h < ar) w = h * ar; else h = w / ar;
+  vb = {x: b.cx - w / 2, y: b.cy - h / 2, w, h}; appliquerVue();
+}
+function svgPt(e) { const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY; const q = p.matrixTransform(svg.getScreenCTM().inverse()); return [q.x, q.y]; }
+
+/* ---------- Aperçu ---------- */
+function majApercu(cacher) {
+  gApercu.replaceChildren();
+  if (cacher || !$('#apercu').checked) return;
+  for (const poly of genererPolys()) gApercu.appendChild(el('polygon', {points: poly.map(p => p.join(',')).join(' ')}));
+}
+
+/* ---------- Souris ---------- */
+let drag = null, pan = null, trait = null;
+svg.addEventListener('pointerdown', e => {
+  const pt = svgPt(e);
+  const g = e.target.closest && e.target.closest('.piece');
+  if (e.button === 1 || (e.button === 0 && !g && mode !== 'couper')) {
+    pan = {x: e.clientX, y: e.clientY, vb: {...vb}}; svg.classList.add('pan'); svg.setPointerCapture(e.pointerId); return;
+  }
+  if (e.button !== 0) return;
+  if (mode === 'couper') {
+    const a = accrocherPoint(pt);
+    trait = {a, b: a, ligne: el('line', {class: 'trait', x1: a[0], y1: a[1], x2: a[0], y2: a[1]})};
+    gOutil.appendChild(trait.ligne); svg.setPointerCapture(e.pointerId); return;
+  }
+  const pc = pieces.find(p => p.id === +g.dataset.id);
+  selectionner(pc);
+  drag = {pc, start: pt, t0: pc.t.slice(), avant: etat(), bouge: false};
+  svg.setPointerCapture(e.pointerId);
+});
+svg.addEventListener('pointermove', e => {
+  const pt = svgPt(e);
+  if (pan) {
+    const s = 1 / svg.getScreenCTM().a;
+    vb.x = pan.vb.x - (e.clientX - pan.x) * s; vb.y = pan.vb.y - (e.clientY - pan.y) * s; appliquerVue(); return;
+  }
+  if (trait) {
+    trait.b = accrocherPoint(pt);
+    trait.ligne.setAttribute('x2', trait.b[0]); trait.ligne.setAttribute('y2', trait.b[1]); return;
+  }
+  if (drag) {
+    const pc = drag.pc;
+    pc.t = [drag.t0[0] + pt[0] - drag.start[0], drag.t0[1] + pt[1] - drag.start[1]];
+    if (Math.abs(pt[0] - drag.start[0]) + Math.abs(pt[1] - drag.start[1]) > 2 * echelle()) drag.bouge = true;
+    accrocherGrille(pc); majElem(pc); return;
+  }
+  const g = e.target.closest && e.target.closest('.piece');
+  let txt = `table  ${Math.round(pt[0])}, ${Math.round(pt[1])}`;
+  if (g) {
+    const pc = pieces.find(p => p.id === +g.dataset.id);
+    const o = toLocal(mat(pc), pt);
+    txt += `\npièce #${pc.id} → carte d'origine  ${Math.round(o[0])}, ${Math.round(o[1])}`;
+  }
+  $('#hud').textContent = txt;
+});
+function relacher() {
+  if (pan) { pan = null; svg.classList.remove('pan'); }
+  if (trait) { const {a, b} = trait; trait.ligne.remove(); trait = null; couperAuTrait(a, b); }
+  if (drag) {
+    const pc = drag.pc;
+    if (drag.bouge) { accrocherSommets(pc); undoStack.push(drag.avant); if (undoStack.length > 300) undoStack.shift(); fin(pc); }
+    drag = null;
+  }
+}
+svg.addEventListener('pointerup', relacher);
+svg.addEventListener('pointercancel', relacher);
+svg.addEventListener('dblclick', e => { if (mode !== 'couper' && e.target.closest('.piece')) tourner(sel, 1); });
+svg.addEventListener('contextmenu', e => {
+  const g = e.target.closest('.piece'); e.preventDefault();
+  if (g && mode !== 'couper') { const pc = pieces.find(p => p.id === +g.dataset.id); selectionner(pc); tourner(pc, -1); }
+});
+svg.addEventListener('wheel', e => {
+  e.preventDefault();
+  const [x, y] = svgPt(e), f = Math.exp(e.deltaY * .0015);
+  vb.x = x - (x - vb.x) * f; vb.y = y - (y - vb.y) * f; vb.w *= f; vb.h *= f; appliquerVue();
+}, {passive: false});
+
+function basculerTrait(on) {
+  mode = on ? 'couper' : 'deplacer';
+  $('#btnTrait').classList.toggle('on', on); svg.classList.toggle('couper', on);
+}
+
+document.addEventListener('keydown', e => {
+  if (e.target.matches('input,select,textarea')) return;
+  const k = e.key.toLowerCase();
+  if ((e.ctrlKey || e.metaKey) && k === 'z') { e.preventDefault(); return annuler(); }
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (k === 'c') return basculerTrait(mode !== 'couper');
+  if (k === 'escape') { if (mode === 'couper') basculerTrait(false); else selectionner(null); return; }
+  if (!sel) return;
+  if (k === 'r') tourner(sel, 1);
+  else if (k === 'e') tourner(sel, -1);
+  else if (k === 'f') retourner(sel);
+  else if (k === 'h') { pousserUndo(); remettre(sel); fin(sel); }
+  else if (k.startsWith('arrow')) {
+    e.preventDefault(); pousserUndo();
+    const s = (pasGrille() || 10) * (e.shiftKey ? 5 : 1);
+    const d = {arrowleft: [-s, 0], arrowright: [s, 0], arrowup: [0, -s], arrowdown: [0, s]}[k];
+    sel.t[0] += d[0]; sel.t[1] += d[1]; fin(sel);
+  }
+});
+
+/* ---------- Panneau ---------- */
+function lireP() {
+  P.motif = $('#motif').value;
+  P.cols = Math.max(1, Math.min(16, +$('#cols').value || 1));
+  P.rows = Math.max(1, Math.min(16, +$('#rows').value || 1));
+  P.param = +$('#param').value;
+  P.mir = $('#miroir').checked; P.alt = $('#alt').checked;
+  majApercu(); sauver();
+}
+function majParam(reset) {
+  const d = PARAMS[P.motif];
+  $('#rowParam').style.display = d ? '' : 'none';
+  if (d) {
+    $('#lblParam').textContent = d.lbl;
+    Object.assign($('#param'), {min: d.min, max: d.max});
+    if (reset) { $('#param').value = d.def; P.param = d.def; }
+  }
+}
+function ecrireP() {
+  $('#motif').value = P.motif; $('#cols').value = P.cols; $('#rows').value = P.rows; $('#param').value = P.param;
+  $('#miroir').checked = P.mir; $('#alt').checked = P.alt;
+  document.querySelectorAll('#rotSeg button').forEach(b => b.classList.toggle('on', +b.dataset.r === P.rot));
+  majParam(false);
+}
+$('#motif').addEventListener('change', () => { P.motif = $('#motif').value; majParam(true); lireP(); });
+['#cols', '#rows', '#param', '#miroir', '#alt'].forEach(s => $(s).addEventListener('input', lireP));
+$('#apercu').addEventListener('change', () => majApercu());
+document.querySelectorAll('#rotSeg button').forEach(b => b.addEventListener('click', () => {
+  P.rot = +b.dataset.r;
+  document.querySelectorAll('#rotSeg button').forEach(x => x.classList.toggle('on', x === b));
+  majApercu(); sauver();
+}));
+$('#btnCut').onclick = decouper;
+$('#btnTrait').onclick = () => basculerTrait(mode !== 'couper');
+$('#btnRotG').onclick = () => tourner(sel, -1);
+$('#btnRotD').onclick = () => tourner(sel, 1);
+$('#btnFlip').onclick = () => retourner(sel);
+$('#btnHome1').onclick = () => { if (sel) { pousserUndo(); remettre(sel); fin(sel); } };
+$('#btnScatter').onclick = () => eparpiller();
+$('#btnShuffle').onclick = melanger;
+$('#btnHome').onclick = () => { pousserUndo(); pieces.forEach(remettre); toutRendre(); sauver(); cadrer(); };
+$('#btnUndo').onclick = annuler;
+$('#btnFit').onclick = cadrer;
+$('#ghost').oninput = () => $('#fantome').setAttribute('opacity', $('#ghost').value / 100);
+$('#contours').onchange = () => svg.classList.toggle('sans-contours', !$('#contours').checked);
+$('#numeros').onchange = majNums;
+function majGrille() {
+  const s = pasGrille();
+  $('#grilleFond').setAttribute('display', $('#showGrid').checked && s ? '' : 'none');
+  if (s) {
+    $('#motifGrille').setAttribute('width', s); $('#motifGrille').setAttribute('height', s);
+    $('#motifGrilleP').setAttribute('d', `M${s} 0H0V${s}`);
+  }
+}
+$('#snap').onchange = majGrille; $('#showGrid').onchange = majGrille;
+
+/* ---------- Fichiers ---------- */
+function telecharger(blob, nom) {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nom;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+$('#btnSave').onclick = () => telecharger(new Blob([etat()], {type: 'application/json'}), 'tangram_disposition.json');
+$('#btnLoad').onclick = () => $('#fJson').click();
+$('#fJson').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try { pousserUndo(); restaurer(await f.text()); sauver(); cadrer(); } catch (err) { msg('Fichier illisible : ' + err.message); }
+  e.target.value = '';
+};
+$('#btnImg').onclick = () => $('#fImg').click();
+$('#fImg').onchange = e => {
+  const f = e.target.files[0]; if (!f) return;
+  const url = URL.createObjectURL(f);
+  chargerImage(url, true);
+  e.target.value = '';
+};
+function chargerImage(src, garder) {
+  const img = new Image();
+  img.onload = () => {
+    const memeTaille = img.naturalWidth === W && img.naturalHeight === H;
+    SRC = src; W = img.naturalWidth; H = img.naturalHeight;
+    const c = $('#carte'); c.setAttribute('href', src); c.setAttribute('width', W); c.setAttribute('height', H);
+    $('#cadre').setAttribute('width', W); $('#cadre').setAttribute('height', H);
+    majGrille();
+    if (garder && memeTaille && pieces.length) { toutRendre(); msg('Image rechargée, disposition conservée', 1800); }
+    else if (!demarre()) decouper();
+    majApercu(true); cadrer();
+  };
+  img.onerror = () => msg('Image introuvable : placez cette page à côté de map_2400.jpg ou utilisez « Charger une autre image ».', 8000);
+  img.src = src;
+}
+let dejaDemarre = false;
+function demarre() {
+  if (dejaDemarre) return false;
+  dejaDemarre = true;
+  try {
+    const s = JSON.parse(localStorage.getItem(CLE) || 'null');
+    if (s) {
+      if (s.P) { P = {...P, ...s.P}; ecrireP(); }
+      const o = JSON.parse(s.etat);
+      if (o.W === W && o.H === H && o.pieces && o.pieces.length) { restaurer(o); return true; }
+    }
+  } catch (e) {}
+  return false;
+}
+$('#btnPng').onclick = () => {
+  if (!pieces.length) return;
+  const img = new Image();
+  img.onload = () => {
+    const pts = []; for (const pc of pieces) pts.push(...worldPoly(pc));
+    const b = bbox(pts), sc = Math.min(1, 6000 / Math.max(b.w, b.h));
+    const cv = document.createElement('canvas'); cv.width = Math.ceil(b.w * sc); cv.height = Math.ceil(b.h * sc);
+    const ctx = cv.getContext('2d');
+    for (const pc of pieces) {
+      const m = mat(pc);
+      ctx.save(); ctx.setTransform(sc, 0, 0, sc, -b.x * sc, -b.y * sc); ctx.transform(m.a, m.b, m.c, m.d, m.e, m.f);
+      ctx.beginPath(); pc.poly.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath(); ctx.clip();
+      ctx.drawImage(img, 0, 0, W, H); ctx.restore();
+    }
+    try { cv.toBlob(bl => bl ? telecharger(bl, 'tangram_carte.png') : msg('Export impossible'), 'image/png'); }
+    catch (err) { msg('Le navigateur bloque l\'export d\'une image ouverte en local : rechargez la carte via « Charger une autre image… » puis réessayez.', 8000); }
+  };
+  img.src = SRC;
+};
+
+/* ---------- Démarrage ---------- */
+majParam(false); majInfo(); appliquerVue();
+window.addEventListener('resize', () => { const ar = svg.clientWidth / Math.max(1, svg.clientHeight); vb.h = vb.w / ar; appliquerVue(); });
+chargerImage(SRC, false);
 </script>
 </body>
 </html>
